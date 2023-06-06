@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "DynamicSun.Migrator": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}

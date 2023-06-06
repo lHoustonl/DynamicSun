@@ -1,0 +1,41 @@
+version: '3.4'
+
+services:
+  dynamicsun.api:
+    container_name: api
+    image: ${DOCKER_REGISTRY-}dynamicsunapi
+    environment:
+      ConnectionStrings:DefaultConnection: Host=database;Pooling=true;Database=weather;User Id=app;Password=password;Include Error Detail=true;Maximum Pool Size=2;
+      Serilog:WriteTo:0:Name: Console
+      Serilog:WriteTo:0:Args:formatter: Serilog.Formatting.Compact.CompactJsonFormatter, Serilog.Formatting.Compact
+    ports:
+      - "9002:80"
+    build:
+      context: .
+      dockerfile: DynamicSun/Dockerfile
+    depends_on:
+      - dynamicsun.pg
+      - dynamicsun.migrator
+
+  dynamicsun.migrator:
+    container_name: migrator
+    image: ${DOCKER_REGISTRY-}dynamicsunmigrator
+    environment:
+      ConnectionStrings:DefaultConnection: Host=database;Pooling=true;Database=weather;User Id=app;Password=password;Include Error Detail=true;Maximum Pool Size=2;
+      Serilog:WriteTo:0:Name: Console
+      Serilog:WriteTo:0:Args:formatter: Serilog.Formatting.Compact.CompactJsonFormatter, Serilog.Formatting.Compact
+    build:
+      context: .
+      dockerfile: DynamicSun.Migrator/Dockerfile
+    depends_on:
+      - dynamicsun.pg
+
+  dynamicsun.pg:
+    container_name: database
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"

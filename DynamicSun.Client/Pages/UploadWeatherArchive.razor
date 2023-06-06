@@ -1,0 +1,89 @@
+﻿@page "/UploadWeatherArchives"
+
+@using DynamicSun.Client.Extensions;
+@using DynamicSun.Integration.Client.Http
+@using DynamicSun.Integration.Client.Http.Models;
+@using DynamicSun.Client.Components
+
+@inject IDynamicSunClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Загрузка архивов погоды</PageTitle>
+
+<MudItem xs="8" sm="8" md="8">
+    <MudBreadcrumbs Items="_breadcrumbsItems"></MudBreadcrumbs>
+</MudItem>
+
+<MudFileUpload T="IReadOnlyList<IBrowserFile>" Accept=".xlsx" FilesChanged="UploadFiles" MaximumFileCount="100">
+    <ButtonTemplate>
+        <MudButton HtmlTag="label"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.CloudUpload"
+                   for="@context">
+            Only .xlsx files
+        </MudButton>
+    </ButtonTemplate>
+</MudFileUpload>
+
+@if (isLoading)
+{
+    <p>Uploading...</p>
+}
+
+@if (loadedFiles != null)
+{
+    <MudList>
+        @foreach (var file in loadedFiles)
+        {
+            <MudListItem Icon="@Icons.Material.Filled.AttachFile">
+                @file.Name <code>@file.Size bytes</code>
+            </MudListItem>
+        }
+    </MudList>
+}
+
+@code {
+    private readonly List<BreadcrumbItem> _breadcrumbsItems = new()
+    {
+        new BreadcrumbItem("ГЛАВНАЯ СТРАНИЦА", href: "/", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("ЗАГРУЗКА АРХИВОВ ПОГОДЫ", href: "/UploadWeatherArchives", icon: Icons.Material.Filled.Business),
+    };
+    private List<IBrowserFile> loadedFiles = new();
+    private bool isLoading;
+
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+
+    IList<IBrowserFile> files = new List<IBrowserFile>();
+    private async Task UploadFiles(IReadOnlyList<IBrowserFile> files)
+    {
+        isLoading = true;
+        loadedFiles.Clear();
+
+        var dialogReference = await DialogService.ShowAsync<ConfirmationDialog>
+            ("Подтвердить действие",
+            new DialogParameters{ { "ContentText", $"Загрузить?" } },
+            new DialogOptions{ CloseOnEscapeKey = true });
+
+        var dialogResult = await dialogReference.Result;
+        if (dialogResult.Canceled)
+            return;
+        try
+        {
+            foreach (var file in files)
+            {
+                loadedFiles.Add(file);
+                var response = await ApiClient.UploadWeatherArchiveAsync(
+                            file.ConvertToStreamPart(),
+                            _cancellationTokenSource.Token);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message + ex.InnerException + ex.StackTrace, Severity.Error, (options) => { options.CloseAfterNavigation = true; });
+        }
+
+        isLoading = false;
+    }
+}

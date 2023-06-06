@@ -1,0 +1,25 @@
+﻿@page "/MainPage"
+
+<PageTitle>Главная страница</PageTitle>
+
+<MudItem xs="8" sm="8" md="8">
+    <MudBreadcrumbs Items="_breadcrumbsItems"></MudBreadcrumbs>
+</MudItem>
+
+<MudPaper Width="300px">
+    <MudList Clickable="true">
+        <MudListItem Text="Просмотр архивов погоды">
+            <MudLink Href="/ArchiveList">Просмотр архивов погоды</MudLink>
+        </MudListItem>
+        <MudListItem Text="Загрузка архивов погоды">
+            <MudLink Href="/UploadWeatherArchives">Загрузка архивов погоды</MudLink>
+        </MudListItem>
+    </MudList>
+</MudPaper>
+
+@code {
+    private readonly List<BreadcrumbItem> _breadcrumbsItems = new()
+    {
+        new BreadcrumbItem("ГЛАВНАЯ СТРАНИЦА", href: "/", icon: Icons.Material.Filled.Home),
+    };
+}
